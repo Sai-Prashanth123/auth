@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            background: #f4f4f4;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .signin { background: #0078D4; }
+        .signup { background: #28a745; }
+        .logout { background: #dc3545; }
+        .btn:hover { opacity: 0.8; }
+        .hidden { display: none; }
+    </style>
+
+    <script>
+        const tenantId = "YOUR_TENANT_ID"; // Replace with your Microsoft Entra ID Tenant ID
+        const clientId = "YOUR_CLIENT_ID"; // Replace with your App Registration Client ID
+        const redirectUri = "https://yourdomain.com/welcome.html"; // Replace with your Redirect URI
+
+        function login(isSignUp = false) {
+            const policy = isSignUp ? "b2c_1a_signup" : "b2c_1a_signin"; // Update with your user flow policy names
+            const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?
+                client_id=${clientId}
+                &response_type=token
+                &redirect_uri=${encodeURIComponent(redirectUri)}
+                &scope=openid profile email
+                &response_mode=fragment
+                &state=xyz123
+                &p=${policy}`;
+
+            window.location.href = authUrl;
+        }
+
+        function logout() {
+            sessionStorage.removeItem("access_token");
+            sessionStorage.removeItem("id_token");
+            window.location.href = redirectUri;
+        }
+
+        function parseToken() {
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const accessToken = params.get("access_token");
+            const idToken = params.get("id_token");
+
+            if (accessToken) {
+                sessionStorage.setItem("access_token", accessToken);
+                sessionStorage.setItem("id_token", idToken);
+
+                document.getElementById("message").innerText = "Login successful!";
+                document.getElementById("signin-btn").classList.add("hidden");
+                document.getElementById("signup-btn").classList.add("hidden");
+                document.getElementById("logout-btn").classList.remove("hidden");
+                document.getElementById("user-info").classList.remove("hidden");
+
+                document.getElementById("access-token").innerText = accessToken;
+                document.getElementById("id-token").innerText = idToken;
+            } else {
+                document.getElementById("message").innerText = "Authentication failed!";
+            }
+        }
+
+        window.onload = parseToken;
+    </script>
+</head>
+<body>
+
+    <div class="container">
+        <h2 id="message">Processing login...</h2>
+
+        <button id="signin-btn" class="btn signin" onclick="login(false)">Sign In</button>
+        <button id="signup-btn" class="btn signup" onclick="login(true)">Sign Up</button>
+        <button id="logout-btn" class="btn logout hidden" onclick="logout()">Logout</button>
+
+        <div id="user-info" class="hidden">
+            <h3>User Info</h3>
+            <p><strong>Access Token:</strong> <span id="access-token"></span></p>
+            <p><strong>ID Token:</strong> <span id="id-token"></span></p>
+        </div>
+    </div>
+
+</body>
+</html>
